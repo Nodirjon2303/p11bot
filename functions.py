@@ -5,6 +5,7 @@ from database import *
 
 
 def start(update: Update, context: CallbackContext):
+    print("salom")
     if check_user(update.effective_user.id):
         update.message.reply_text("Buyurtmani birga joylashtiramizmi? 🤗", reply_markup=main_button())
         return 'state_main'
