@@ -42,3 +42,21 @@ def product_button_bycat(cat_id):
     button.append([InlineKeyboardButton('Orqaga', callback_data='back')])
 
     return InlineKeyboardMarkup(button)
+
+
+def quantity_button(soni = '0'):
+    button = []
+    res = []
+    button.append([InlineKeyboardButton(f'Tanlangan: {soni}', callback_data='quantity')])
+    for i in range(1, 10):
+        res.append(InlineKeyboardButton(f"{i}", callback_data=f'{i}'))
+        if len(res)==3:
+            button.append(res)
+            res = []
+    res.append(InlineKeyboardButton('0', callback_data='0'))
+    res.append(InlineKeyboardButton('O\'chirish', callback_data='delete'))
+    button.append(res)
+    button.append([InlineKeyboardButton('Savatchaga joylash', callback_data='savat')])
+    button.append([InlineKeyboardButton('Orqaga', callback_data='back')])
+
+    return InlineKeyboardMarkup(button)

@@ -28,6 +28,12 @@ conv_handler = ConversationHandler(
         ],
         'state_main':[
             CallbackQueryHandler(command_category)
+        ],
+        'state_product':[
+            CallbackQueryHandler(command_product)
+        ],
+        'state_product_quantity': [
+            CallbackQueryHandler(command_product_quantity)
         ]
     },
     fallbacks=[
