@@ -2,10 +2,13 @@ from telegram import Update
 from telegram.ext import CallbackContext
 from Buttons import *
 from database import *
+from geopy.geocoders import Nominatim
+import time
+from pprint import pprint
 
 
 def start(update: Update, context: CallbackContext):
-    print("Assalomu alaykum")
+    # print(update.message.chat)
     if check_user(update.effective_user.id):
         update.message.reply_text("Assalomu alaykum", reply_markup=ReplyKeyboardRemove())
         update.message.reply_text("Buyurtmani birga joylashtiramizmi? 🤗", reply_markup=main_button())
@@ -66,8 +69,104 @@ def command_category(update: Update, context: CallbackContext):
         query.message.reply_photo(open('images/img.png', 'rb'), caption=f"Bo'lim <b>{cat_name}</b>", parse_mode='HTML',
                                   reply_markup=product_button_bycat(int(data)))
         return 'state_product'
+    elif data == 'savatcha':
+        order_id = get_order(update.effective_user.id)
+        context.user_data['order_id'] = order_id
+        order_details = get_order_products(order_id)
+        if len(order_details) == 0:
+            query.message.reply_html("Sizning Savatchangi bo'm bo'sh\n"
+                                     "Savatchangizga mahsulot qo'shing", reply_markup=main_button())
+            return 'state_main'
+        else:
+            xabar = ""
+            sanoq = 1
+            Jami = 0
+            for i in order_details:
+                product = get_product(i[2])
+                xabar += f"""{sanoq}.{product[2]}
+└ {product[2]} {i[4]} x {product[3]} = {i[4] * product[3]} so'm
+
+"""
+                sanoq += 1
+                Jami += i[4] * product[3]
+            xabar += f"Jami: {Jami}"
+            query.message.reply_html(xabar, reply_markup=savatcha_button(order_details))
+            return 'state_savatcha'
 
 
+def command_savatcha(update: Update, context: CallbackContext):
+    query = update.callback_query
+    data = query.data
+    if data == 'product':
+        return 'state_savatcha'
+    elif data == 'again':
+        query.message.delete()
+        query.message.reply_text("Buyurtmangizni davom ettirishingiz mumkin", reply_markup=main_button())
+        return 'state_main'
+    elif data == 'confirm':
+        query.message.delete()
+        query.message.reply_html("Yaxshi endi bizga manzilingizni yuboring", reply_markup=location_button())
+        return 'state_location'
+    else:
+        type, id = data.split('_')
+        if type == 'plus':
+            update_order_detail_plus(int(id))
+        elif type == 'minus':
+            if check_order_detail(int(id)):
+                update_order_detail_minus(int(id))
+
+        order_id = get_order(update.effective_user.id)
+        order_details = get_order_products(order_id)
+        if len(order_details) == 0:
+            query.message.edit_text("Sizning Savatchangi bo'm bo'sh\n"
+                                     "Savatchangizga mahsulot qo'shing", reply_markup=main_button())
+            return 'state_main'
+        else:
+            xabar = ""
+            sanoq = 1
+            Jami = 0
+            for i in order_details:
+                product = get_product(i[2])
+                xabar += f"""{sanoq}.{product[2]}
+└ {product[2]} {i[4]} x {product[3]} = {i[4] * product[3]} so'm
+    
+            """
+                sanoq += 1
+                Jami += i[4] * product[3]
+            xabar += f"Jami: {Jami}"
+            query.message.edit_text(xabar, reply_markup=savatcha_button(order_details), parse_mode='HTML')
+            return 'state_savatcha'
+def command_location(update:Update, context:CallbackContext):
+    latitude = update.message.location.latitude
+    longitude = update.message.location.longitude
+    app = Nominatim(user_agent="tutorial")
+    coordinates = f"{latitude}, {longitude}"
+    manzil = app.reverse(coordinates, language='eng').raw['display_name']
+    context.user_data['latitude'] = latitude
+    context.user_data['longitude'] = longitude
+    context.user_data['manzil'] = manzil
+    update.message.reply_text(manzil+"\n"
+                                                                                           "Sizning manzilingiz to'g'riligini tasdiqlang", reply_markup=check_location_button())
+    return 'state_check_location'
+
+def command_confirm(update:Update, context:CallbackContext):
+    print(context.user_data)
+    update.message.reply_text("Sizning zakazingiz muaffaqiyatli qabul qilindi", reply_markup=main_button())
+    change_order_status(context.user_data['order_id'])
+    xabar = 'Yangi Zakaz!!!\n' \
+            f"Zakaz: <b>{context.user_data['order_id']}</b>\n" \
+            f"Mahsulotlar: \n"
+    order_dets = get_order_products(context.user_data['order_id'])
+    for i in order_dets:
+        product = get_product(i[2])
+        xabar +=f"{product[2]} ==> {i[4]} * {product[3]} = {i[4]*product[3]} \n"
+    xabar+=f"{context.user_data['manzil']}"
+    context.bot.send_message(-1001529417057, xabar,parse_mode = "HTML")
+    context.bot.send_location(-1001529417057, context.user_data['latitude'], context.user_data['longitude'])
+
+
+
+    return 'state_main'
 def command_product(update: Update, context: CallbackContext):
     query = update.callback_query
     data = query.data
@@ -92,6 +191,7 @@ Iltimos, kerakli bo’lgan miqdorni kiriting! <a href="https://cdn.delever.uz/de
 def command_product_quantity(update: Update, context: CallbackContext):
     query = update.callback_query
     data = query.data
+    print(context.user_data)
     if data.isdigit():
         soni = '0'
         if context.user_data['soni']:
@@ -99,6 +199,7 @@ def command_product_quantity(update: Update, context: CallbackContext):
                 context.user_data['soni'] = ''
             soni = context.user_data['soni'] + data
             context.user_data['soni'] = soni
+
         elif data != '0' and not (context.user_data['soni']):
             soni = data
             context.user_data['soni'] = soni
@@ -121,7 +222,7 @@ def command_product_quantity(update: Update, context: CallbackContext):
                                   reply_markup=product_button_bycat(int(category_id)))
         return 'state_product'
     elif data == 'savat':
-        if context.user_data['soni']!='0' or context.user_data['soni'] !='':
+        if context.user_data['soni'] != '0' and  context.user_data['soni'] != '':
             ord_id = get_order(update.effective_user.id)
             quantity = int(context.user_data['soni'])
             product_id = context.user_data['product_id']
@@ -129,5 +230,5 @@ def command_product_quantity(update: Update, context: CallbackContext):
             query.message.delete()
             query.message.reply_text("Savatchaga muaffaqiyatli joylandi", reply_markup=main_button())
             return 'state_main'
-
-
+        else:
+            context.bot.answerCallbackQuery(query.id, "Sizning tanlangan mahsulot soni 0 ta!!!", show_alert=True)

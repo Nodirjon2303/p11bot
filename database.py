@@ -130,15 +130,27 @@ def add_user(telegram_id, full_name, first_name, phone, viloyat):
     conn.commit()
 
 
-def add_ord_det(order_id, product_id, quantity):
+def add_ord_det(order_id, product_id, quant):
     conn = connect('main.db')
     cursor = conn.cursor()
     cursor.execute(f"""
-    INSERT INTO Order_detail (order_id, product_id, quantity)
-    VALUES ({order_id}, {product_id}, {quantity})
+    select * from Order_detail
+    where order_id = {order_id} and product_id = {product_id}
     """)
-    conn.commit()
-
+    data = cursor.fetchall()
+    if not data:
+        cursor.execute(f"""
+        INSERT INTO Order_detail (order_id, product_id, quantity)
+        VALUES ({order_id}, {product_id}, {quant})
+        """)
+        conn.commit()
+    else:
+        cursor.execute(f"""
+        UPDATE Order_detail
+        SET quantity = quantity+{quant}
+        where order_id = {order_id} and product_id = {product_id}
+        """)
+        conn.commit()
 
 def check_user(telegram_id):
     conn = connect('main.db')
@@ -194,6 +206,100 @@ def get_order(telegram_id):
         return data[0]
     else:
         return data[0]
+
+
+def get_order_products(order_id):
+    conn = connect('main.db')
+    cursor = conn.cursor()
+    cursor.execute(f"""
+    select * from Order_detail
+    where order_id = {order_id}
+    """)
+    data = cursor.fetchall()
+
+    return data
+
+
+print(get_order_products(1))
+print(get_product(2))
+def get_product(product_id):
+    conn = connect('main.db')
+    cursor = conn.cursor()
+    cursor.execute(f"""
+        select * from products
+        where id = {product_id}
+        """)
+    data = cursor.fetchone()
+    return data
+
+
+def update_order_detail_plus(id):
+    conn = connect('main.db')
+    cursor = conn.cursor()
+    cursor.execute(f"""
+            UPDATE Order_detail
+            SET quantity = quantity+1
+            where id = {id}
+            """)
+    data = cursor.fetchone()
+    return data
+
+
+def update_order_detail_plus(id):
+    conn = connect('main.db')
+    cursor = conn.cursor()
+    cursor.execute(f"""
+            UPDATE Order_detail
+            SET quantity = quantity+1
+            where id = {id}
+            """)
+    conn.commit()
+
+
+def update_order_detail_minus(id):
+    conn = connect('main.db')
+    cursor = conn.cursor()
+    cursor.execute(f"""
+            UPDATE Order_detail
+            SET quantity = quantity-1
+            where id = {id}
+            """)
+    conn.commit()
+
+def change_order_status(order_id):
+    conn = connect('main.db')
+    cursor = conn.cursor()
+    cursor.execute(f"""
+                UPDATE Orders
+                SET status = 'done'
+                where order_id = {order_id}
+                """)
+    conn.commit()
+
+
+
+
+def check_order_detail(id):
+    conn = connect('main.db')
+    cursor = conn.cursor()
+    cursor.execute(f"""
+    select quantity from Order_detail
+    where  id = {id}
+    """)
+    data = cursor.fetchone()[0]
+    if data == 1:
+        cursor.execute(f"""
+            DELETE FROM Order_detail
+            where id = {id}
+            """)
+        conn.commit()
+        return False
+    else:
+        return True
+
+
+print(get_order_products(2))
+print(get_product(1))
 
 # print(get_order(903534595))
 # print(get_product(1))

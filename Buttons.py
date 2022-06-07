@@ -8,6 +8,19 @@ def phone_button():
     ]
     return ReplyKeyboardMarkup(button, resize_keyboard=True, one_time_keyboard=True)
 
+def location_button():
+    button = [
+        [KeyboardButton('Manzilni yuborish', request_location=True)]
+    ]
+    return ReplyKeyboardMarkup(button, resize_keyboard=True, one_time_keyboard=True)
+
+
+def check_location_button():
+    button = [
+        ['Tasdiqlash', KeyboardButton('Manzilni qayta  yuborish', request_location=True)]
+    ]
+    return ReplyKeyboardMarkup(button, resize_keyboard=True, one_time_keyboard=True)
+
 
 def main_button():
     data = get_all_categories()
@@ -59,4 +72,20 @@ def quantity_button(soni = '0'):
     button.append([InlineKeyboardButton('Savatchaga joylash', callback_data='savat')])
     button.append([InlineKeyboardButton('Orqaga', callback_data='back')])
 
+    return InlineKeyboardMarkup(button)
+
+
+
+def savatcha_button(order_details):
+    button = []
+    res = []
+    for i in order_details:
+        product = get_product(i[2])
+        res.append(InlineKeyboardButton("➕", callback_data=f'plus_{i[0]}'))
+        res.append(InlineKeyboardButton(f"{product[2]}", callback_data=f'product'))
+        res.append(InlineKeyboardButton("➖", callback_data=f'minus_{i[0]}'))
+        button.append(res)
+        res = []
+    button.append([InlineKeyboardButton("Buyurtmani tasdiqlash", callback_data='confirm')])
+    button.append([InlineKeyboardButton("Yana buyurtma berish", callback_data='again')])
     return InlineKeyboardMarkup(button)
