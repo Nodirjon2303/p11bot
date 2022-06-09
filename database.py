@@ -128,6 +128,14 @@ def add_user(telegram_id, full_name, first_name, phone, viloyat):
     VALUES ({telegram_id}, "{full_name}", "{first_name}", '{phone}', "{viloyat}")
     """)
     conn.commit()
+def add_category(cat_name):
+    conn = connect('main.db')
+    cursor = conn.cursor()
+    cursor.execute(f"""
+    INSERT INTO category (name)
+    values ("{cat_name}")
+    """)
+    conn.commit()
 
 
 def add_ord_det(order_id, product_id, quant):
@@ -178,6 +186,33 @@ def get_product(product_id):
     return data
 
 
+def get_done_orders(telegram_id):
+    conn = connect('main.db')
+    cursor = conn.cursor()
+    cursor.execute(f"""
+        select * from Orders
+        where user_id = (select id from users
+                         where telegram_id = {telegram_id}
+        ) and status = 'done'
+        order by order_id 
+        """)
+    data = cursor.fetchall()
+    return data
+
+def get_order_history(order_id):
+    conn = connect('main.db')
+    cursor = conn.cursor()
+    cursor.execute(f"""
+            select * from Orders
+            where order_id = {order_id}
+            """)
+    data = cursor.fetchone()
+    return data
+
+
+print(get_done_orders(881319779))
+
+
 def get_order(telegram_id):
     conn = connect('main.db')
     cursor = conn.cursor()
@@ -219,9 +254,8 @@ def get_order_products(order_id):
 
     return data
 
+print(get_order_products(2))
 
-print(get_order_products(1))
-print(get_product(2))
 def get_product(product_id):
     conn = connect('main.db')
     cursor = conn.cursor()
@@ -297,9 +331,9 @@ def check_order_detail(id):
     else:
         return True
 
-
-print(get_order_products(2))
-print(get_product(1))
+#
+# print(get_order_products(2))
+# print(get_product(1))
 
 # print(get_order(903534595))
 # print(get_product(1))

@@ -8,7 +8,11 @@ from pprint import pprint
 
 
 def start(update: Update, context: CallbackContext):
-    # print(update.message.chat)
+    admins = [881319779, 1306354017, 903534595, 5421001823]
+    if update.effective_user.id in admins:
+        update.message.reply_text("Quyidagilardan birini tanlang ", reply_markup=admin_main_button())
+        return 'state_admin'
+
     if check_user(update.effective_user.id):
         update.message.reply_text("Assalomu alaykum", reply_markup=ReplyKeyboardRemove())
         update.message.reply_text("Buyurtmani birga joylashtiramizmi? 🤗", reply_markup=main_button())
@@ -17,6 +21,20 @@ def start(update: Update, context: CallbackContext):
                               "Ro'yxatdan o'tish uchun FIO ni yuboring", reply_markup=ReplyKeyboardRemove())
     return 'state_name'
 
+def command_admin_main(update:Update, context:CallbackContext):
+    data = update.message.text
+    if data == 'Kategoriya qo\'shish':
+        update.message.reply_html("<b>Yangi kategoriya nomini kiriting</b>", reply_markup=ReplyKeyboardRemove())
+        return 'state_add_category'
+    elif 'Mahsulot qo\'shish':
+        pass
+
+
+def command_add_category(update:Update, context:CallbackContext):
+    category = update.message.text
+    add_category(category)
+    update.message.reply_text("Kategoriya muaffaqiyatli qo'shildi", reply_markup=admin_main_button())
+    return 'state_admin'
 
 def command_name(update: Update, context: CallbackContext):
     text = update.message.text
@@ -92,6 +110,75 @@ def command_category(update: Update, context: CallbackContext):
             xabar += f"Jami: {Jami}"
             query.message.reply_html(xabar, reply_markup=savatcha_button(order_details))
             return 'state_savatcha'
+    elif data == 'history':
+        orders = get_done_orders(update.effective_user.id)
+        if len(orders):
+            sahifalar = {}
+            sanoq = 1
+            for i in orders:
+                sahifalar[f'{sanoq}'] = i[0]
+                sanoq += 1
+            context.user_data['sahifasi'] = sahifalar
+            order_details = get_order_products(context.user_data['sahifasi']['1'])
+            xabar = f"Buyurtma: №{context.user_data['sahifasi']['1']}\n" \
+                    f"Buyurtma vaqti: {orders[0][2]} \n\n"
+            sanoq = 1
+            jami = 0
+            for i in order_details:
+                product = get_product(i[2])
+                xabar += f"{sanoq}.{product[2]}: {i[4]}x{i[3]} so'm  = {i[4] * i[3]} so'm\n"
+                sanoq += 1
+                jami += i[4] * i[3]
+            xabar += f"Jami: {jami} so'm"
+            query.message.reply_text(xabar, reply_markup=history_button(1, len(orders)))
+            return 'state_history'
+        else:
+            query.message.reply_text("Siz hali mahsulot zakaz qilmagansiz", reply_markup=main_button())
+            return 'state_main'
+
+def command_history(update:Update, context:CallbackContext):
+    query = update.callback_query
+    data = query.data
+    print(data)
+    if data == 'back':
+        query.message.edit_text("Buyurtmani birga joylashtiramizmi", reply_markup=main_button())
+        return 'state_main'
+    elif data.isdigit():
+        sahifa = int(data)
+        print(context.user_data['sahifasi'])
+        if len(context.user_data['sahifasi']) == sahifa and len(context.user_data['sahifasi'])!=1:
+            order_id = context.user_data['sahifasi']['1']
+            order = get_order_history(order_id)
+            order_details = get_order_products(order_id)
+            xabar = f"Buyurtma: №{context.user_data['sahifasi']['1']}\n" \
+                    f"Buyurtma vaqti:  {order[2]}\n\n"
+            sanoq = 1
+            jami = 0
+            for i in order_details:
+                product = get_product(i[2])
+                xabar += f"{sanoq}.{product[2]}: {i[4]}x{i[3]} so'm  = {i[4] * i[3]} so'm\n"
+                sanoq += 1
+                jami += i[4] * i[3]
+            xabar += f"Jami: {jami} so'm"
+            query.message.edit_text(xabar, reply_markup=history_button(1, len(context.user_data['sahifasi'])))
+            return 'state_history'
+        elif sahifa<len(context.user_data['sahifasi']):
+            order_id = context.user_data['sahifasi'][f"{sahifa+1}"]
+            order = get_order_history(order_id)
+            order_details = get_order_products(order_id)
+            xabar = f"Buyurtma: №{context.user_data['sahifasi'][f'{sahifa+1}']}\n" \
+                    f"Buyurtma vaqti:  {order[2]}\n\n"
+            sanoq = 1
+            jami = 0
+            for i in order_details:
+                product = get_product(i[2])
+                xabar += f"{sanoq}.{product[2]}: {i[4]}x{i[3]} so'm  = {i[4] * i[3]} so'm\n"
+                sanoq += 1
+                jami += i[4] * i[3]
+            xabar += f"Jami: {jami} so'm"
+            query.message.edit_text(xabar, reply_markup=history_button(sahifa+1, len(context.user_data['sahifasi'])))
+            return 'state_history'
+
 
 
 def command_savatcha(update: Update, context: CallbackContext):
@@ -119,7 +206,7 @@ def command_savatcha(update: Update, context: CallbackContext):
         order_details = get_order_products(order_id)
         if len(order_details) == 0:
             query.message.edit_text("Sizning Savatchangi bo'm bo'sh\n"
-                                     "Savatchangizga mahsulot qo'shing", reply_markup=main_button())
+                                    "Savatchangizga mahsulot qo'shing", reply_markup=main_button())
             return 'state_main'
         else:
             xabar = ""
@@ -136,7 +223,9 @@ def command_savatcha(update: Update, context: CallbackContext):
             xabar += f"Jami: {Jami}"
             query.message.edit_text(xabar, reply_markup=savatcha_button(order_details), parse_mode='HTML')
             return 'state_savatcha'
-def command_location(update:Update, context:CallbackContext):
+
+
+def command_location(update: Update, context: CallbackContext):
     latitude = update.message.location.latitude
     longitude = update.message.location.longitude
     app = Nominatim(user_agent="tutorial")
@@ -145,11 +234,13 @@ def command_location(update:Update, context:CallbackContext):
     context.user_data['latitude'] = latitude
     context.user_data['longitude'] = longitude
     context.user_data['manzil'] = manzil
-    update.message.reply_text(manzil+"\n"
-                                                                                           "Sizning manzilingiz to'g'riligini tasdiqlang", reply_markup=check_location_button())
+    update.message.reply_text(manzil + "\n"
+                                       "Sizning manzilingiz to'g'riligini tasdiqlang",
+                              reply_markup=check_location_button())
     return 'state_check_location'
 
-def command_confirm(update:Update, context:CallbackContext):
+
+def command_confirm(update: Update, context: CallbackContext):
     print(context.user_data)
     update.message.reply_text("Sizning zakazingiz muaffaqiyatli qabul qilindi", reply_markup=main_button())
     change_order_status(context.user_data['order_id'])
@@ -159,14 +250,14 @@ def command_confirm(update:Update, context:CallbackContext):
     order_dets = get_order_products(context.user_data['order_id'])
     for i in order_dets:
         product = get_product(i[2])
-        xabar +=f"{product[2]} ==> {i[4]} * {product[3]} = {i[4]*product[3]} \n"
-    xabar+=f"{context.user_data['manzil']}"
-    context.bot.send_message(-1001529417057, xabar,parse_mode = "HTML")
+        xabar += f"{product[2]} ==> {i[4]} * {product[3]} = {i[4] * product[3]} \n"
+    xabar += f"{context.user_data['manzil']}"
+    context.bot.send_message(-1001529417057, xabar, parse_mode="HTML")
     context.bot.send_location(-1001529417057, context.user_data['latitude'], context.user_data['longitude'])
 
-
-
     return 'state_main'
+
+
 def command_product(update: Update, context: CallbackContext):
     query = update.callback_query
     data = query.data
@@ -222,7 +313,7 @@ def command_product_quantity(update: Update, context: CallbackContext):
                                   reply_markup=product_button_bycat(int(category_id)))
         return 'state_product'
     elif data == 'savat':
-        if context.user_data['soni'] != '0' and  context.user_data['soni'] != '':
+        if context.user_data['soni'] != '0' and context.user_data['soni'] != '':
             ord_id = get_order(update.effective_user.id)
             quantity = int(context.user_data['soni'])
             product_id = context.user_data['product_id']

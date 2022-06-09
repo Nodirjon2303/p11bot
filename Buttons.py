@@ -89,3 +89,18 @@ def savatcha_button(order_details):
     button.append([InlineKeyboardButton("Buyurtmani tasdiqlash", callback_data='confirm')])
     button.append([InlineKeyboardButton("Yana buyurtma berish", callback_data='again')])
     return InlineKeyboardMarkup(button)
+
+def history_button(sahifa, jami):
+    button  = [
+        [InlineKeyboardButton(f'📖 Sahifa {sahifa}/{jami}', callback_data=f"{sahifa}")],
+        [InlineKeyboardButton(f"⬅️Orqaga",callback_data='back')]
+    ]
+    return InlineKeyboardMarkup(button)
+
+def admin_main_button():
+    button = [
+        ['Kategoriya qo\'shish'],
+        ['Mahsulot qo\'shish']
+    ]
+    return ReplyKeyboardMarkup(button, resize_keyboard=True)
+

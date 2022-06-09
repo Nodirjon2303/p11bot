@@ -37,12 +37,22 @@ conv_handler = ConversationHandler(
         'state_savatcha': [
             CallbackQueryHandler(command_savatcha)
         ],
-        'state_location':[
+        'state_location': [
             MessageHandler(Filters.location, callback=command_location)
         ],
-        'state_check_location':[
+        'state_check_location': [
             MessageHandler(Filters.location, callback=command_location),
             MessageHandler(Filters.regex('^(' + 'Tasdiqlash' + ')$'), callback=command_confirm)
+        ],
+        'state_history': [
+            CallbackQueryHandler(command_history)
+        ],
+        'state_admin': [
+            MessageHandler(Filters.text, command_admin_main)
+        ],
+        'state_add_category': [
+            CommandHandler('start', start),
+            MessageHandler(Filters.text, command_add_category)
         ]
     },
     fallbacks=[
