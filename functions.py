@@ -27,7 +27,43 @@ def command_admin_main(update:Update, context:CallbackContext):
         update.message.reply_html("<b>Yangi kategoriya nomini kiriting</b>", reply_markup=ReplyKeyboardRemove())
         return 'state_add_category'
     elif 'Mahsulot qo\'shish':
-        pass
+        update.message.reply_text("Qo'shmoqchi bo'lgan mahsulotingizning kategoriyasini tanlang", reply_markup=category_button())
+        return 'state_add_product_category'
+def command_add_product_category(update:Update, context:CallbackContext):
+    query = update.callback_query
+    data = query.data
+    context.user_data['cat_id'] = data
+    query.message.delete()
+    query.message.reply_text("Mahsulotning nomini kiriting: ")
+    return 'state_add_product_name'
+
+
+def command_add_product_name(update:Update, context:CallbackContext):
+    name = update.message.text
+    context.user_data['pr_name'] = name
+    update.message.reply_text("Mahsulot narxini kiriting: ")
+    return 'state_add_product_price'
+def command_add_product_price(update:Update, context:CallbackContext):
+    price = update.message.text
+    if price.isdigit():
+        context.user_data['pr_price'] = price
+        update.message.reply_text("Mahsulot rasmini yuboring: ")
+        return 'state_add_product_image'
+    else:
+        update.message.reply_html("Mahsulot narxi xato berilgan\n"
+                                  "Qayta kiriting")
+        return 'state_add_product_price'
+
+
+def command_add_product_photo(update:Update, context:CallbackContext):
+    update.message.photo[-1].get_file().download(f"images/{context.user_data['pr_name']}.jpg")
+    name = context.user_data['pr_name']
+    price = context.user_data['pr_price']
+    cat_id = context.user_data['cat_id']
+    add_product(cat_id, name, price)
+    update.message.reply_text("Sizning mahsulot muaffaqiyatli qo'shildi", reply_markup=admin_main_button())
+    return 'state_admin'
+
 
 
 def command_add_category(update:Update, context:CallbackContext):
@@ -251,6 +287,7 @@ def command_confirm(update: Update, context: CallbackContext):
     for i in order_dets:
         product = get_product(i[2])
         xabar += f"{product[2]} ==> {i[4]} * {product[3]} = {i[4] * product[3]} \n"
+        set_unit_price(i[0], product[3])
     xabar += f"{context.user_data['manzil']}"
     context.bot.send_message(-1001529417057, xabar, parse_mode="HTML")
     context.bot.send_location(-1001529417057, context.user_data['latitude'], context.user_data['longitude'])
@@ -272,9 +309,12 @@ def command_product(update: Update, context: CallbackContext):
         xabar = f"""Siz tanladingiz: {data[2]}
 Narx: {data[3]} so'm
 -----
-Iltimos, kerakli bo’lgan miqdorni kiriting! <a href="https://cdn.delever.uz/delever/d63c47ed-ec5e-46f0-9b21-e5a51fb42373">Nechta kerakligini tanlang?</a>"""
-
-        query.message.reply_html(xabar, reply_markup=quantity_button())
+Iltimos, kerakli bo’lgan miqdorni kiriting!"""
+        try:
+            query.message.reply_photo(open(f'images/{data[2]}.jpg', 'rb'), caption=xabar, reply_markup=quantity_button(), parse_mode='HTML')
+        except Exception as e:
+            print(e)
+            query.message.reply_html(xabar, reply_markup=quantity_button())
         context.user_data['soni'] = ''
         return 'state_product_quantity'
 

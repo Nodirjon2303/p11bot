@@ -1,3 +1,4 @@
+import datetime
 from sqlite3 import connect
 
 
@@ -128,6 +129,8 @@ def add_user(telegram_id, full_name, first_name, phone, viloyat):
     VALUES ({telegram_id}, "{full_name}", "{first_name}", '{phone}', "{viloyat}")
     """)
     conn.commit()
+
+
 def add_category(cat_name):
     conn = connect('main.db')
     cursor = conn.cursor()
@@ -135,6 +138,27 @@ def add_category(cat_name):
     INSERT INTO category (name)
     values ("{cat_name}")
     """)
+    conn.commit()
+
+
+def add_product(cat_id, name, price):
+    conn = connect('main.db')
+    cursor = conn.cursor()
+    cursor.execute(f"""
+    INSERT INTO products (cat_id, name, price)
+    values ({cat_id}, "{name}", {price})
+    """)
+    conn.commit()
+
+
+def set_unit_price(order_det_id, price):
+    conn = connect('main.db')
+    cursor = conn.cursor()
+    cursor.execute(f"""
+        UPDATE Order_detail
+        set unit_price = {price}
+        where id = {order_det_id}
+        """)
     conn.commit()
 
 
@@ -159,6 +183,7 @@ def add_ord_det(order_id, product_id, quant):
         where order_id = {order_id} and product_id = {product_id}
         """)
         conn.commit()
+
 
 def check_user(telegram_id):
     conn = connect('main.db')
@@ -199,6 +224,7 @@ def get_done_orders(telegram_id):
     data = cursor.fetchall()
     return data
 
+
 def get_order_history(order_id):
     conn = connect('main.db')
     cursor = conn.cursor()
@@ -210,7 +236,10 @@ def get_order_history(order_id):
     return data
 
 
-print(get_done_orders(881319779))
+# order = get_order_history(1)
+# print(order[2])
+
+# print(get_done_orders(881319779))
 
 
 def get_order(telegram_id):
@@ -254,7 +283,9 @@ def get_order_products(order_id):
 
     return data
 
+
 print(get_order_products(2))
+
 
 def get_product(product_id):
     conn = connect('main.db')
@@ -300,17 +331,16 @@ def update_order_detail_minus(id):
             """)
     conn.commit()
 
+
 def change_order_status(order_id):
     conn = connect('main.db')
     cursor = conn.cursor()
     cursor.execute(f"""
                 UPDATE Orders
-                SET status = 'done'
+                SET status = 'done', order_date = CURRENT_TIMESTAMP
                 where order_id = {order_id}
                 """)
     conn.commit()
-
-
 
 
 def check_order_detail(id):
@@ -331,9 +361,11 @@ def check_order_detail(id):
     else:
         return True
 
+
 #
 # print(get_order_products(2))
 # print(get_product(1))
 
 # print(get_order(903534595))
 # print(get_product(1))
+print(get_product(1))

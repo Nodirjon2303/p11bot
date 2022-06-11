@@ -53,6 +53,20 @@ conv_handler = ConversationHandler(
         'state_add_category': [
             CommandHandler('start', start),
             MessageHandler(Filters.text, command_add_category)
+        ],
+        'state_add_product_category': [
+            CallbackQueryHandler(command_add_product_category)
+        ],
+        'state_add_product_name': [
+            CommandHandler('start', start),
+            MessageHandler(Filters.text, command_add_product_name)
+        ],
+        'state_add_product_price': [
+            CommandHandler('start', start),
+            MessageHandler(Filters.text, command_add_product_price)
+        ],
+        'state_add_product_image': [
+            MessageHandler(Filters.photo, command_add_product_photo)
         ]
     },
     fallbacks=[

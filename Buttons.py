@@ -40,6 +40,21 @@ def main_button():
 
     return InlineKeyboardMarkup(button)
 
+def category_button():
+    data = get_all_categories()
+    button = []
+    res = []
+    for i in data:
+        res.append(InlineKeyboardButton(i[1], callback_data=i[0]))
+        if len(res) == 2:
+            button.append(res)
+            res = []
+
+    if len(res)>0:
+        button.append(res)
+
+    return InlineKeyboardMarkup(button)
+
 
 def product_button_bycat(cat_id):
     products = get_products_by_catid(cat_id)
@@ -102,5 +117,5 @@ def admin_main_button():
         ['Kategoriya qo\'shish'],
         ['Mahsulot qo\'shish']
     ]
-    return ReplyKeyboardMarkup(button, resize_keyboard=True)
+    return ReplyKeyboardMarkup(button, resize_keyboard=True, one_time_keyboard=True)
 
