@@ -48,6 +48,8 @@ conv_handler = ConversationHandler(
             CallbackQueryHandler(command_history)
         ],
         'state_admin': [
+            MessageHandler(Filters.regex('^(' + 'Statistika' + ')$'), callback=command_statistika),
+            MessageHandler(Filters.regex('^(' + 'Reklama' + ')$'), callback=command_admin_reklama),
             MessageHandler(Filters.text, command_admin_main)
         ],
         'state_add_category': [
@@ -67,6 +69,12 @@ conv_handler = ConversationHandler(
         ],
         'state_add_product_image': [
             MessageHandler(Filters.photo, command_add_product_photo)
+        ],
+        'join_confirm': [
+            CallbackQueryHandler(command_join_confirm)
+        ],
+        'state_reklama': [
+            MessageHandler(Filters.all, command_send_reklama)
         ]
     },
     fallbacks=[

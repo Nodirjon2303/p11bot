@@ -8,7 +8,15 @@ from pprint import pprint
 
 
 def start(update: Update, context: CallbackContext):
-    admins = [881319779, 1306354017, 903534595, 5421001823]
+    admins = (1306354017, 903534595, 5421001823, 881319779)
+    user = context.bot.get_chat_member(-1001529417057, update.effective_user.id)
+    if user.status == 'left':
+        update.message.reply_text("Iltimos botimizdan foydalanish uchun guruhga ulaning!!! ",
+                                  reply_markup=InlineKeyboardMarkup(
+                                      [[InlineKeyboardButton("Guruhga ulanish", url='https://t.me/p11_python')],
+                                       [InlineKeyboardButton("Tekshirish", callback_data='confirm')]
+                                       ]))
+        return 'join_confirm'
     if update.effective_user.id in admins:
         update.message.reply_text("Quyidagilardan birini tanlang ", reply_markup=admin_main_button())
         return 'state_admin'
@@ -21,15 +29,43 @@ def start(update: Update, context: CallbackContext):
                               "Ro'yxatdan o'tish uchun FIO ni yuboring", reply_markup=ReplyKeyboardRemove())
     return 'state_name'
 
-def command_admin_main(update:Update, context:CallbackContext):
+
+def command_join_confirm(update: Update, context: CallbackContext):
+    query = update.callback_query
+    data = query.data
+    if data == 'confirm':
+        user = context.bot.get_chat_member(-1001529417057, update.effective_user.id)
+        if user.status == 'left':
+            query.message.reply_html("Siz hali guruhga ulanmagansiz\n"
+                                     "Ulanib qayta harakat qilib ko'ring")
+            return 'join_confirm'
+        else:
+            admins = (1306354017, 903534595, 5421001823)
+            if update.effective_user.id in admins:
+                query.message.reply_text("Quyidagilardan birini tanlang ", reply_markup=admin_main_button())
+                return 'state_admin'
+
+            if check_user(update.effective_user.id):
+                query.message.reply_text("Assalomu alaykum", reply_markup=ReplyKeyboardRemove())
+                query.message.reply_text("Buyurtmani birga joylashtiramizmi? 🤗", reply_markup=main_button())
+                return 'state_main'
+            query.message.reply_text("Assalomu alaykum Botimizga xush kelibsiz\n"
+                                     "Ro'yxatdan o'tish uchun FIO ni yuboring", reply_markup=ReplyKeyboardRemove())
+            return 'state_name'
+
+
+def command_admin_main(update: Update, context: CallbackContext):
     data = update.message.text
     if data == 'Kategoriya qo\'shish':
         update.message.reply_html("<b>Yangi kategoriya nomini kiriting</b>", reply_markup=ReplyKeyboardRemove())
         return 'state_add_category'
     elif 'Mahsulot qo\'shish':
-        update.message.reply_text("Qo'shmoqchi bo'lgan mahsulotingizning kategoriyasini tanlang", reply_markup=category_button())
+        update.message.reply_text("Qo'shmoqchi bo'lgan mahsulotingizning kategoriyasini tanlang",
+                                  reply_markup=category_button())
         return 'state_add_product_category'
-def command_add_product_category(update:Update, context:CallbackContext):
+
+
+def command_add_product_category(update: Update, context: CallbackContext):
     query = update.callback_query
     data = query.data
     context.user_data['cat_id'] = data
@@ -38,12 +74,14 @@ def command_add_product_category(update:Update, context:CallbackContext):
     return 'state_add_product_name'
 
 
-def command_add_product_name(update:Update, context:CallbackContext):
+def command_add_product_name(update: Update, context: CallbackContext):
     name = update.message.text
     context.user_data['pr_name'] = name
     update.message.reply_text("Mahsulot narxini kiriting: ")
     return 'state_add_product_price'
-def command_add_product_price(update:Update, context:CallbackContext):
+
+
+def command_add_product_price(update: Update, context: CallbackContext):
     price = update.message.text
     if price.isdigit():
         context.user_data['pr_price'] = price
@@ -55,7 +93,7 @@ def command_add_product_price(update:Update, context:CallbackContext):
         return 'state_add_product_price'
 
 
-def command_add_product_photo(update:Update, context:CallbackContext):
+def command_add_product_photo(update: Update, context: CallbackContext):
     update.message.photo[-1].get_file().download(f"images/{context.user_data['pr_name']}.jpg")
     name = context.user_data['pr_name']
     price = context.user_data['pr_price']
@@ -65,12 +103,12 @@ def command_add_product_photo(update:Update, context:CallbackContext):
     return 'state_admin'
 
 
-
-def command_add_category(update:Update, context:CallbackContext):
+def command_add_category(update: Update, context: CallbackContext):
     category = update.message.text
     add_category(category)
     update.message.reply_text("Kategoriya muaffaqiyatli qo'shildi", reply_markup=admin_main_button())
     return 'state_admin'
+
 
 def command_name(update: Update, context: CallbackContext):
     text = update.message.text
@@ -172,7 +210,8 @@ def command_category(update: Update, context: CallbackContext):
             query.message.reply_text("Siz hali mahsulot zakaz qilmagansiz", reply_markup=main_button())
             return 'state_main'
 
-def command_history(update:Update, context:CallbackContext):
+
+def command_history(update: Update, context: CallbackContext):
     query = update.callback_query
     data = query.data
     print(data)
@@ -182,7 +221,7 @@ def command_history(update:Update, context:CallbackContext):
     elif data.isdigit():
         sahifa = int(data)
         print(context.user_data['sahifasi'])
-        if len(context.user_data['sahifasi']) == sahifa and len(context.user_data['sahifasi'])!=1:
+        if len(context.user_data['sahifasi']) == sahifa and len(context.user_data['sahifasi']) != 1:
             order_id = context.user_data['sahifasi']['1']
             order = get_order_history(order_id)
             order_details = get_order_products(order_id)
@@ -198,11 +237,11 @@ def command_history(update:Update, context:CallbackContext):
             xabar += f"Jami: {jami} so'm"
             query.message.edit_text(xabar, reply_markup=history_button(1, len(context.user_data['sahifasi'])))
             return 'state_history'
-        elif sahifa<len(context.user_data['sahifasi']):
-            order_id = context.user_data['sahifasi'][f"{sahifa+1}"]
+        elif sahifa < len(context.user_data['sahifasi']):
+            order_id = context.user_data['sahifasi'][f"{sahifa + 1}"]
             order = get_order_history(order_id)
             order_details = get_order_products(order_id)
-            xabar = f"Buyurtma: №{context.user_data['sahifasi'][f'{sahifa+1}']}\n" \
+            xabar = f"Buyurtma: №{context.user_data['sahifasi'][f'{sahifa + 1}']}\n" \
                     f"Buyurtma vaqti:  {order[2]}\n\n"
             sanoq = 1
             jami = 0
@@ -212,9 +251,8 @@ def command_history(update:Update, context:CallbackContext):
                 sanoq += 1
                 jami += i[4] * i[3]
             xabar += f"Jami: {jami} so'm"
-            query.message.edit_text(xabar, reply_markup=history_button(sahifa+1, len(context.user_data['sahifasi'])))
+            query.message.edit_text(xabar, reply_markup=history_button(sahifa + 1, len(context.user_data['sahifasi'])))
             return 'state_history'
-
 
 
 def command_savatcha(update: Update, context: CallbackContext):
@@ -311,7 +349,8 @@ Narx: {data[3]} so'm
 -----
 Iltimos, kerakli bo’lgan miqdorni kiriting!"""
         try:
-            query.message.reply_photo(open(f'images/{data[2]}.jpg', 'rb'), caption=xabar, reply_markup=quantity_button(), parse_mode='HTML')
+            query.message.reply_photo(open(f'images/{data[2]}.jpg', 'rb'), caption=xabar,
+                                      reply_markup=quantity_button(), parse_mode='HTML')
         except Exception as e:
             print(e)
             query.message.reply_html(xabar, reply_markup=quantity_button())
@@ -363,3 +402,27 @@ def command_product_quantity(update: Update, context: CallbackContext):
             return 'state_main'
         else:
             context.bot.answerCallbackQuery(query.id, "Sizning tanlangan mahsulot soni 0 ta!!!", show_alert=True)
+
+
+def command_statistika(update: Update, context: CallbackContext):
+    users = get_all_users()
+    update.message.reply_html(f"Botdagi foydalanuvchilar soni: <b>{len(users)}</b>")
+
+
+def command_admin_reklama(update: Update, context: CallbackContext):
+    update.message.reply_text("Yaxshi reklamangizni yuboring", reply_markup=ReplyKeyboardRemove())
+    return 'state_reklama'
+
+
+def command_send_reklama(update: Update, context: CallbackContext):
+    message = update.message
+    users = get_all_users()
+    sanoq = 0
+    for i in users:
+        try:
+            context.bot.forward_message(i[1], update.effective_user.id, message.message_id)
+            sanoq += 1
+        except Exception as e:
+            print(e)
+    update.message.reply_text(f"Sizning xabaringiz {sanoq} ta kishiga yuborildi", reply_markup=admin_main_button())
+    return 'state_admin'

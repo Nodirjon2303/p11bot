@@ -362,6 +362,17 @@ def check_order_detail(id):
         return True
 
 
+
+
+def get_all_users():
+    conn = connect('main.db')
+    cursor = conn.cursor()
+    cursor.execute("""
+    select * from users
+    """)
+    data = cursor.fetchall()
+    return data
+
 #
 # print(get_order_products(2))
 # print(get_product(1))

@@ -115,7 +115,8 @@ def history_button(sahifa, jami):
 def admin_main_button():
     button = [
         ['Kategoriya qo\'shish'],
-        ['Mahsulot qo\'shish']
+        ['Mahsulot qo\'shish'],
+        ['Statistika', 'Reklama']
     ]
-    return ReplyKeyboardMarkup(button, resize_keyboard=True, one_time_keyboard=True)
+    return ReplyKeyboardMarkup(button, resize_keyboard=True)
 
